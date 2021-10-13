@@ -1,0 +1,109 @@
+######################################################################
+#Load packages
+library(nimble)
+library(coda)
+library(reshape)
+library(reshape2)
+######################################################################
+
+ch_data <- read.csv('mil_ch.csv')
+weather <- read.csv('weather.csv')
+
+
+temp <- subset(weather, Variable == 'Temperature')
+temp.min <- scale(temp$Min)
+ch_data <- subset(ch_data, Code != 'M')
+captures <- subset(ch_data, Code == 'C')
+size <- scale(captures$MM)
+ch_data$alive <- 1
+
+obs <- cast(ch_data, ID ~ Primary ~ Secondary, value = 'alive', fun.aggregate = 'max')
+obs[obs == '-Inf'] <- 0
+
+ch <- cast(ch_data, ID ~ Primary, value = 'alive', fun.aggregate = 'max')
+ch[ch == '-Inf'] <- 0
+ch$ID <- NULL
+
+######################################################################
+# seen in specified secondary and in at least one other secondary
+######################################################################
+alpha<- matrix(0, ncol = dim(obs)[3], nrow = dim(obs)[2])
+for (i in 1:nrow(ch)){
+  for (t in 1:ncol(ch)){
+    if(obs[i,t,1] == 1 & sum(obs[i,t,2] > 0)){alpha[t,1] <- alpha[t,1] + 1}
+    if(obs[i,t,2] == 1 & sum(obs[i,t,1] > 0)){alpha[t,2] <- alpha[t,2] + 1}
+  }
+}
+
+######################################################################
+#available but not seen p1
+######################################################################
+p1.only <- matrix(0, nrow(ch), ncol(ch))
+for (i in 1:nrow(ch)){
+  for (t in 1:ncol(ch)){
+    if(obs[i,t,1] == 0 & sum(obs[i,t,] > 0)){p1.only[i,t] <- 1}
+  }
+}
+
+######################################################################
+# available but not seen p2
+######################################################################
+p2.only <- matrix(0, nrow(ch), ncol(ch))
+for (i in 1:nrow(ch)){
+  for (t in 1:ncol(ch)){
+    if(obs[i,t,2] == 0 & sum(obs[i,t,] >0 )){p2.only[i,t] <- 1}
+  }
+}
+######################################################################
+# available but only observed in other detection occasions
+######################################################################
+beta <- matrix(0, nrow = ncol(ch), ncol = dim(obs)[3])
+for (t in 1:ncol(ch)){
+  beta[t,1] <- sum(p1.only[,t])
+  beta[t,2] <- sum(p2.only[,t])
+}
+######################################################################
+# remove individuals never encountered
+######################################################################
+ch[ch == 0] <- 2
+get.first <- function(x)min(which (x != 2))
+first <- apply(ch,1,get.first); first[first == "Inf"] <- NA
+ch <- subset(ch, !is.na(first))
+p1.only <- subset(p1.only, !is.na(first))
+p2.only <- subset(p2.only, !is.na(first))
+
+first <- subset(first, !is.na(first))
+
+# Augment data
+ch.du <- cbind(rep(0, dim(ch)[1]), ch)
+nz <- 1500
+ch.du <- data.matrix(ch.du)
+ch.ms <- rbind(ch.du, matrix(0, ncol = dim(ch.du)[2], nrow = nz))
+ch.ms[ch.ms==0] <- 2                     # Not seen = 2, seen = 1
+
+
+js.multistate.init <- function(ch, nz){
+  ch[ch==2] <- NA
+  state <- ch
+  for (i in 1:nrow(ch)){
+    n1 <- min(which(ch[i,]==1))
+    n2 <- max(which(ch[i,]==1))
+    state[i,n1:n2] <- 2
+  }
+  state[state==0] <- NA
+  get.first <- function(x) min(which(!is.na(x)))
+  get.last <- function(x) max(which(!is.na(x)))  
+  f <- apply(state, 1, get.first)
+  l <- apply(state, 1, get.last)
+  for (i in 1:nrow(ch)){
+    state[i,1:f[i]] <- 1
+    if(l[i]!=ncol(ch)) state[i, (l[i]+1):ncol(ch)] <- 4
+    state[i, f[i]] <- 2
+    
+  }  
+  state <- rbind(state, matrix(1, ncol = ncol(ch), nrow = nz))
+  state[,1] <- NA
+  return(state)
+}
+
+z.init <- js.multistate.init(ch.du, nz)
