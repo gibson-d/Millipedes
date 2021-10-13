@@ -1,0 +1,53 @@
+Day,Variable,Max,Avg,Min
+1,Dew Point,37,32.9,28
+1,Humidity,89,59.6,24
+1,Temperature,70,48.8,32
+1,Wind Speed,6,1.9,0
+2,Dew Point,42,38.6,35
+2,Humidity,76,58.9,33
+2,Temperature,70,53.8,43
+2,Wind Speed,12,4.1,0
+3,Dew Point,41,36,30
+3,Humidity,89,58.1,23
+3,Temperature,73,53,35
+3,Wind Speed,8,1.4,0
+4,Dew Point,35,32.6,30
+4,Humidity,79,47.9,18
+4,Temperature,78,55.3,37
+4,Wind Speed,12,2.2,0
+5,Dew Point,37,33.4,29
+5,Humidity,79,46.4,15
+5,Temperature,81,57.3,39
+5,Wind Speed,13,2.6,0
+6,Dew Point,36,32,25
+6,Humidity,73,39.4,12
+6,Temperature,83,60.7,43
+6,Wind Speed,7,2.1,0
+7,Dew Point,37,34.8,32
+7,Humidity,66,47.8,33
+7,Temperature,66,55,45
+7,Wind Speed,24,10.1,0
+8,Dew Point,37,33.8,29
+8,Humidity,74,57.8,42
+8,Temperature,58,48.5,39
+8,Wind Speed,8,3,0
+9,Dew Point,34,30.2,26
+9,Humidity,85,64.7,47
+9,Temperature,53,42,30
+9,Wind Speed,13,4.9,0
+10,Dew Point,36,29.5,22
+10,Humidity,82,54.1,23
+10,Temperature,61,47.6,35
+10,Wind Speed,20,8,0
+11,Dew Point,37,31,25
+11,Humidity,70,54.9,35
+11,Temperature,58,47.1,37
+11,Wind Speed,31,8.3,0
+12,Dew Point,38,30.5,25
+12,Humidity,100,76.8,55
+12,Temperature,43,37.7,29
+12,Wind Speed,15,5.9,0
+13,Dew Point,29,21.4,15
+13,Humidity,96,91.5,85
+13,Temperature,32,23.6,17
+13,Wind Speed,6,2.2,0
