@@ -6,8 +6,8 @@ library(reshape)
 library(reshape2)
 ######################################################################
 
-ch_data <- read.csv('mil_ch.csv')
-weather <- read.csv('weather.csv')
+ch_data <- read.csv('https://raw.githubusercontent.com/gibson-d/Millipedes/main/mil_ch.csv')
+weather <- read.csv('https://raw.githubusercontent.com/gibson-d/Millipedes/main/weather.csv')
 
 
 temp <- subset(weather, Variable == 'Temperature')
