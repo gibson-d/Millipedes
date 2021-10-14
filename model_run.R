@@ -93,7 +93,7 @@ model_1 <- nimbleCode({
               zstop[i] <- sum(u[i,1:(n.occasions-1)])    # individual stopover duration (known + pseudo)
                 }
              }
-               zes <- mean(zstop[1:nch]                  # mean stopover, known-only
+               zes <- mean(zstop[1:n.ch]                  # mean stopover, known-only
           for (i in 1:M){
              recruit[i,1] <- u[i,1]
              for (t in 2:n.occasions){
