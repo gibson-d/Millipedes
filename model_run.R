@@ -77,12 +77,12 @@ model_1 <- nimbleCode({
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         ########## Chandler trick ############
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        for(i in (n.ch+1):M) {                                        # Loop through psuedo individuals
-          pzo[i,1] <- 1 - (pstar[1] * z[i,1] * w[i])                  # probability of not being detected on first occasion
+        for(i in (n.ch+1):M) {                                      # Loop through psuedo individuals
+          pzo[i,1] <- 1 - (pstar[1] * z[i,1] * w[i])                # probability of not being detected on first occasion
         for (t in 2:n.occasions){
           pzo[i,t] <- 1 - (pstar[t] * z[i,t] * w[i] * gammap[t-1])  # probability of not being detected on each other occasion
         }
-          zeros[i] ~ dbern(1-prod(pzo[i,1:n.occasions]))                           # probability of at being detected at least once (zeros = vector of 0's for each augmented individual)
+          zeros[i] ~ dbern(1-prod(pzo[i,1:n.occasions]))       # probability of at being detected at least once (zeros = vector of 0's for each augmented individual)
         }
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
         ################# Calculate derived population parameters ##################
@@ -90,8 +90,10 @@ model_1 <- nimbleCode({
           for (i in 1:M){
              for (t in 1:n.occasions){
                 u[i,t] <- z[i,t]*w[i]     # Deflate latent state (u)
+              zstop[i] <- sum(u[i,1:(n.occasions-1)])    # individual stopover duration (known + pseudo)
                 }
              }
+               zes <- mean(zstop[1:nch]                  # mean stopover, known-only
           for (i in 1:M){
              recruit[i,1] <- u[i,1]
              for (t in 2:n.occasions){
@@ -107,6 +109,17 @@ model_1 <- nimbleCode({
              Nalive[i] <- 1-equals(Nind[i], 0)
              } #i
           Nsuper <- sum(Nalive[1:M])         # Superpopulation size
+    
+
+  
+    }#i
+    for (i in (loop.limits[j] + 1): (max(loop.limits)+20)){
+    zstop[i,j] <- 99999                                            # 'ragged edged objects'protection
+    }#i
+    zes[j] <- mean(zstop[1:loop.limits[j],j])
+    }    #j
+    
+    
       #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
       ############################## End model ################################### 
       #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -127,11 +140,11 @@ w.init <- rep(1, nrow(ch.js))              # Set initial values for latent inclu
 dat       <- list(y = ch,  hits = alpha, hits_misses = (alpha + beta), zeros = c(rep(NA, nrow(ch)), rep(0, nz)),lengths = c(size, rep(NA, nz)), temp  = temp.min[,1] )
 constants <- list( n.occasions = dim(ch.js)[2], M = dim(ch.js)[1],   n.sec = rep(2,13), n.ch = dim(ch)[1] )
 
-pars <- c("b", "beta", "mean.phi", "mean.gamma", "psi", 'p', 'pstar','Nsuper','N', 'beta.temp')
+pars <- c("b", "beta", "mean.phi", "mean.gamma", "psi", 'p', 'pstar','Nsuper','N', 'beta.temp','zes', 'zstop')
 # Initial values
  initsFunction <- function()list(z = z.init, w = w.init, mean.gamma = 0.3, 
                                  mean.phi = 0.8, beta.temp = c(0,0),
-                                 sig.lengths = 1, lengths = c(size, rep(0, nz)), mean.p = 0.25, sig.p = .25, 
+                                 mean.p = 0.25, sig.p = .25, 
                                  psi = 0.5) 
 
 inits <- initsFunction() 
@@ -155,13 +168,12 @@ out <- clusterEvalQ(cl_new5, {
   
   model <- nimbleModel( code = model_1, constants = constants,  dat =  dat, inits = inits)
   
-  model$simulate(c('p','lp', 'pstar', 'beta', 'b', 'eta', 'mu1', 'lifted_z_oBi_comma_1_cB_times_pstar_oB1_cB_times_w_oBi_cB_L33',
-                   'lifted_z_oBi_comma_t_cB_times_pstar_oBt_cB_times_w_oBi_cB_times_gammap_oBi_comma_t_minus_1_cB_L35', 'pzo','zeros'))
-  
+  model$simulate(c('p','lp', 'pstar', 'beta', 'b', 'eta', 'mu1','pzo','zeros'))
   model$initializeInfo()
   model$calculate()
   
-  mcmc_Conf  <- configureMCMC(model, useConjugacy = FALSE, thin2 = 5, monitors2 = c('pstar','N','B','Nsuper','mean.phi','mean.gamma', 'phi', 'gammap','b','beta', 'shape','rate'))
+  mcmc_Conf  <- configureMCMC(model, useConjugacy = FALSE, thin2 = 5, 
+                              monitors2 = c('pstar','N','B','Nsuper','mean.phi','mean.gamma', 'phi', 'gammap','b','beta', 'shape','rate'))
   modelMCMC  <- buildMCMC( mcmc_Conf)
   Cmodel     <- compileNimble(model)
   CmodelMCMC <- compileNimble(modelMCMC)
